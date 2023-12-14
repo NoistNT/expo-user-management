@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Alert, StyleSheet, View } from 'react-native'
-import { Button, Input } from 'react-native-elements'
+import { Button, Input, Text } from 'react-native-elements'
 
 import { supabase } from '../lib/supabase'
+import { validateAuthData } from '../utils/validateAuthData'
 
 export default function Auth() {
   const [loading, setLoading] = useState(false)
-  const [userData, setUserData] = useState({
+  const [authUserData, setAuthUserData] = useState({
     email: '',
     password: ''
   })
@@ -14,9 +15,15 @@ export default function Auth() {
   const signInWithEmail = async () => {
     setLoading(true)
 
+    if (!validateAuthData(authUserData)) {
+      setLoading(false)
+
+      return
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
-      email: userData.email,
-      password: userData.password
+      email: authUserData.email,
+      password: authUserData.password
     })
 
     if (error) Alert.alert(error.message)
@@ -26,12 +33,18 @@ export default function Auth() {
   const signUpWithEmail = async () => {
     setLoading(true)
 
+    if (!validateAuthData(authUserData)) {
+      setLoading(false)
+
+      return
+    }
+
     const {
       data: { session },
       error
     } = await supabase.auth.signUp({
-      email: userData.email,
-      password: userData.password
+      email: authUserData.email,
+      password: authUserData.password
     })
 
     if (error) Alert.alert(error.message)
@@ -40,35 +53,43 @@ export default function Auth() {
   }
 
   const handleChange = ({ name, value }: { name: string; value: string }) => {
-    setUserData({ ...userData, [name]: value })
+    setAuthUserData({ ...authUserData, [name]: value })
   }
 
   return (
     <View style={styles.container}>
-      <View style={[styles.verticallySpaced, styles.mt20]}>
-        <Input
-          autoCapitalize="none"
-          autoCorrect={false}
-          label="Email"
-          leftIcon={{ type: 'font-awesome', name: 'envelope' }}
-          placeholder="email@address.com"
-          value={userData.email}
-          onChangeText={(value) => handleChange({ name: 'email', value })}
-        />
+      <View style={styles.titleContainer}>
+        <Text style={styles.title}>Welcome to My App</Text>
+        <Text style={styles.subtitle}>
+          Please sign in or sign up to continue
+        </Text>
+      </View>
+      <View style={styles.formContainer}>
+        <View style={styles.verticallySpaced}>
+          <Input
+            autoCapitalize="none"
+            autoCorrect={false}
+            label="Email"
+            leftIcon={{ type: 'font-awesome', name: 'envelope' }}
+            placeholder="email@address.com"
+            value={authUserData.email}
+            onChangeText={(value) => handleChange({ name: 'email', value })}
+          />
+        </View>
+        <View style={styles.verticallySpaced}>
+          <Input
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            label="Password"
+            leftIcon={{ type: 'font-awesome', name: 'lock' }}
+            placeholder="Password"
+            value={authUserData.password}
+            onChangeText={(value) => handleChange({ name: 'password', value })}
+          />
+        </View>
       </View>
       <View style={styles.verticallySpaced}>
-        <Input
-          secureTextEntry
-          autoCapitalize="none"
-          autoCorrect={false}
-          label="Password"
-          leftIcon={{ type: 'font-awesome', name: 'lock' }}
-          placeholder="Password"
-          value={userData.password}
-          onChangeText={(value) => handleChange({ name: 'password', value })}
-        />
-      </View>
-      <View style={[styles.verticallySpaced, styles.mt20]}>
         <Button
           buttonStyle={{
             backgroundColor: 'black',
@@ -99,14 +120,29 @@ export default function Auth() {
 const styles = StyleSheet.create({
   container: {
     marginTop: 40,
-    padding: 12
+    padding: 8
+  },
+  titleContainer: {
+    marginBottom: 20
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#333333',
+    textAlign: 'center',
+    paddingVertical: 12
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#999999',
+    textAlign: 'center'
+  },
+  formContainer: {
+    marginTop: 12,
+    width: '100%'
   },
   verticallySpaced: {
-    paddingTop: 4,
-    paddingBottom: 4,
+    paddingVertical: 4,
     alignSelf: 'stretch'
-  },
-  mt20: {
-    marginTop: 20
   }
 })
